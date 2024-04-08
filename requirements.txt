@@ -3,5 +3,7 @@ uvicorn
 pandas
 scikit-learn
 joblib
+mlflow
+pydantic
 
 -e .

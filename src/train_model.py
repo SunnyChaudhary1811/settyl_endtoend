@@ -1,47 +1,68 @@
+import logging
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 import joblib
 
-# Load data
-data = pd.read_csv("data/dataset.csv")
+# Configure logging
+logging.basicConfig(filename='training.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Split data into features and target
-X = data.drop(columns=["internalStatus"])
-y = data["internalStatus"]
+try:
+    # Load data
+    data_url = "C:/settyl_endtoend/data/dataset.csv"
+    data = pd.read_csv(data_url)
 
-# Define preprocessing steps
-numeric_features = ["numeric_column1", "numeric_column2"]
-numeric_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='median')),
-    ('scaler', StandardScaler())
-])
+    # Check for missing values
+    logging.info("Checking for missing values...")
+    logging.info(data.isnull().sum())
 
-categorical_features = ["categorical_column"]
-categorical_transformer = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
-    ('onehot', OneHotEncoder(handle_unknown='ignore'))
-])
+    # Split data into features and target
+    X = data.drop(columns=["internalStatus"])
+    y = data["internalStatus"]
 
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', numeric_transformer, numeric_features),
-        ('cat', categorical_transformer, categorical_features)
+    # Split data into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Check if X_train and y_train contain NaN values
+    logging.info("Checking for missing values in train set...")
+    logging.info(X_train.isnull().sum())
+    logging.info(y_train.isnull().sum())
+
+    # Define preprocessing steps
+    categorical_features = ["externalStatus"]
+    categorical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore'))
     ])
 
-# Append classifier to preprocessing pipeline
-clf = Pipeline(steps=[('preprocessor', preprocessor),
-                      ('classifier', RandomForestClassifier())])
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('cat', categorical_transformer, categorical_features)
+        ])
 
-# Split data into train and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Append classifier to preprocessing pipeline
+    clf = Pipeline(steps=[('preprocessor', preprocessor),
+                          ('classifier', RandomForestClassifier())])
 
-# Fit the model
-clf.fit(X_train, y_train)
+    # Fit the model
+    logging.info("Training the model...")
+    clf.fit(X_train, y_train)
 
-# Save the model
-joblib.dump(clf, "models/trained_model.pkl")
+    # Save the model
+    logging.info("Saving the model...")
+    joblib.dump(clf, r"C:\settyl_endtoend\models\trained_model.pkl")
+
+    logging.info("Training completed successfully.")
+
+except Exception as e:
+    # Log any exceptions
+    logging.error(f"An error occurred: {str(e)}")
+
+
+
+
+
